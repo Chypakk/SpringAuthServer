@@ -1,6 +1,8 @@
 package org.chypakk.controller;
 
 import com.nimbusds.jose.JOSEException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import org.chypakk.model.User;
 import org.chypakk.repository.UserRepository;
 import org.chypakk.util.JwtUtils;
@@ -53,7 +55,8 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestParam("username") String username,
-                                   @RequestParam("password") String password) {
+                                   @RequestParam("password") String password,
+                                   HttpServletResponse response) {
 
         try {
             Authentication authentication = authenticationManager.authenticate(
@@ -62,10 +65,17 @@ public class AuthController {
                             password
                     )
             );
+
             String token = jwtUtils.generateToken(username);
 
-            return ResponseEntity.ok()
+            Cookie cookie = new Cookie("access_token", token);
+            cookie.setHttpOnly(true);
+            cookie.setPath("/");
+            cookie.setMaxAge((int)jwtUtils.getExpirationMs() / 1000);
 
+            response.addCookie(cookie);
+
+            return ResponseEntity.ok()
                     .body(OAuth2AccessTokenResponse.withToken(token)
                             .tokenType(OAuth2AccessToken.TokenType.BEARER)
                             .expiresIn(jwtUtils.getExpirationMs() / 1000)

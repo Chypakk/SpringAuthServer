@@ -1,6 +1,7 @@
 package org.chypakk.configuration;
 
-import org.chypakk.filter.JwtAuthFilter;
+import org.chypakk.filter.JwtCookieAuthFilter;
+import org.chypakk.util.JwtUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -18,28 +19,21 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import javax.crypto.spec.SecretKeySpec;
 import java.io.FileReader;
 import java.io.IOException;
-import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
-import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
-import java.util.Base64;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig{
 
-    private final UserDetailsService userDetailsService;
+    private final JwtUtils jwtUtils;
     private final RSAPublicKey publicKey;
 
-    public SecurityConfig(UserDetailsService userDetailsService, RsaKeyLoader rsaKeyLoader) throws Exception {
-        this.userDetailsService = userDetailsService;
+    public SecurityConfig(JwtUtils jwtUtils, RsaKeyLoader rsaKeyLoader) throws Exception {
+        this.jwtUtils = jwtUtils;
         this.publicKey = rsaKeyLoader.rsaPublicKey();
     }
 
@@ -54,11 +48,11 @@ public class SecurityConfig{
                         .anyRequest().authenticated()
                 ).oauth2ResourceServer(rs -> rs
                         .jwt(jwt -> jwt.decoder(jwtDecoder())))
-                .sessionManagement(session  -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
-//                .addFilterBefore(
-//                        new JwtAuthFilter(userDetailsService),
-//                        UsernamePasswordAuthenticationFilter.class
-//                );
+                .sessionManagement(session  -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(
+                        new JwtCookieAuthFilter(jwtUtils),
+                        UsernamePasswordAuthenticationFilter.class
+                );
 
         return http.build();
     }
