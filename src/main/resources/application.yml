@@ -1,0 +1,19 @@
+# PostgreSQL
+spring:
+  datasource:
+    url: jdbc:postgresql://172.17.17.200:5432/ForTest
+    username: postgres
+    password: root
+
+  # JPA
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+jwt:
+  public-key-path: "classpath:public.pem"
+  private-key-path: "classpath:private.pem"
